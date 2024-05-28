@@ -1,0 +1,14 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = '''function love.quit()'''
+position = "after"
+payload = '''
+DiscordIPC.close()
+'''
+match_indent = true
