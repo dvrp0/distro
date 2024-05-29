@@ -122,12 +122,20 @@ function DiscordIPC.write(message)
         return
     end
 
-    DiscordIPC.socket:seek("end")
-    local _, err = DiscordIPC.socket:write(message)
-    DiscordIPC.socket:flush()
+    if DiscordIPC.is_windows then
+        DiscordIPC.socket:seek("end")
+        local _, err = DiscordIPC.socket:write(message)
+        DiscordIPC.socket:flush()
 
-    if err then
-        print("Distro :: Failed to write to Discord IPC - "..err)
+        if err then
+            print("Distro :: Failed to write to Discord IPC - "..err)
+        end
+    else
+        local sent = ffi.C.send(DiscordIPC.socket, message, #message, 0)
+
+        if sent < 0 then
+            print("Distro :: Failed to write to Discord IPC")
+        end
     end
 end
 
@@ -140,6 +148,10 @@ function DiscordIPC.read(buffer)
 end
 
 function DiscordIPC.close()
+    if not DiscordIPC.socket then
+        return
+    end
+
     DiscordIPC.send("{}", DiscordIPC.OPCODES.CLOSE)
 
     if DiscordIPC.is_windows then
@@ -152,12 +164,7 @@ function DiscordIPC.close()
 end
 
 function DiscordIPC.send(data, opcode)
-    if DiscordIPC.is_windows then
-        DiscordIPC.write(Distro.pack(opcode, #data)..data)
-    else
-        local message = Distro.pack(opcode, #data)..data
-        ffi.C.send(DiscordIPC.socket, message, #message, 0)
-    end
+    DiscordIPC.write(Distro.pack(opcode, #data)..data)
 end
 
 function DiscordIPC.send_handshake()
