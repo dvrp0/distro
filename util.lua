@@ -1,4 +1,4 @@
-local ffi = require "ffi"
+local ffi = require("ffi")
 
 Distro = {}
 Distro.decks = {
@@ -47,7 +47,7 @@ function Distro.get_uuid()
 end
 
 function Distro.get_pid()
-    if ffi.os == "Windows" then
+    if DiscordIPC.is_windows then
         ffi.cdef[[
             unsigned long GetCurrentProcessId(void);
         ]]
