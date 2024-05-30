@@ -2,7 +2,7 @@
 --- MOD_NAME: Distro
 --- MOD_ID: Distro
 --- MOD_AUTHOR: [DVRP]
---- MOD_DESCRIPTION: Hey
+--- MOD_DESCRIPTION: Adds Discord Rich Presence support
 
 ----------------------------------------------
 ------------MOD CODE -------------------------
@@ -99,4 +99,10 @@ function Game:update_shop(dt)
     end
 
     update_shop_ref(self, dt)
+end
+
+local quit_ref = G.FUNCS.quit
+function G.FUNCS.quit(e)
+    DiscordIPC.close()
+    quit_ref(e)
 end

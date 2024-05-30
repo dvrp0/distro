@@ -160,6 +160,7 @@ function DiscordIPC.close()
         ffi.C.close(DiscordIPC.socket)
     end
 
+    DiscordIPC.socket = nil
     print("Distro :: Disconnected from Discord IPC")
 end
 
