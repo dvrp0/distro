@@ -10,6 +10,15 @@
 
 Distro = {}
 
+if SMODS.Atlas then
+    SMODS.Atlas({
+        key = "modicon",
+        path = "icon.png",
+        px = 34,
+        py = 34
+    })
+end
+
 local main_menu_ref = Game.main_menu
 function Game:main_menu(change_context)
     main_menu_ref(self, change_context)
