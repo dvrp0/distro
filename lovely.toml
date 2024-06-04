@@ -9,6 +9,8 @@ target = "main.lua"
 pattern = '''function love.quit()'''
 position = "after"
 payload = '''
-DiscordIPC.close()
+if DiscordIPC then
+    DiscordIPC.close()
+end
 '''
 match_indent = true

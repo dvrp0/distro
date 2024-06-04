@@ -3,23 +3,29 @@
 --- MOD_ID: Distro
 --- MOD_AUTHOR: [DVRP]
 --- MOD_DESCRIPTION: Adds Discord Rich Presence support
+--- VERSION: 1.0.0
 
 ----------------------------------------------
 ------------MOD CODE -------------------------
 
-function SMODS.INIT.Distro()
-    NFS.load(SMODS.findModByID("Distro").path.."discord-rpc.lua")()
-    NFS.load(SMODS.findModByID("Distro").path.."util.lua")()
-
-    if not DiscordIPC.connect() then
-        print("Distro :: Failed to connect to Discord IPC")
-        DiscordIPC.reconnect()
-    end
-end
+Distro = {}
 
 local main_menu_ref = Game.main_menu
 function Game:main_menu(change_context)
     main_menu_ref(self, change_context)
+
+    if not Distro.initialized then
+        local path = SMODS.findModByID and SMODS.findModByID("Distro").path or SMODS.Mods["Distro"].path
+
+        NFS.load(path.."discord-rpc.lua")()
+        NFS.load(path.."util.lua")()
+        Distro.initialized = true
+    end
+
+    if not DiscordIPC.connected and not DiscordIPC.connect() then
+        print("Distro :: Failed to connect to Discord IPC")
+        DiscordIPC.reconnect()
+    end
 
     DiscordIPC.activity = {
         details = "Idling",
@@ -82,7 +88,7 @@ end
 local update_selecting_hand_ref = Game.update_selecting_hand
 function Game:update_selecting_hand(dt)
     if not G.STATE_COMPLETE then
-        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante..": "..G.GAME.blind.name
+        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante.." | "..G.GAME.blind.name
         DiscordIPC.activity.state = G.GAME.current_round.hands_left.." Hands, "..G.GAME.current_round.discards_left.." Discards left"
         DiscordIPC.send_activity()
     end
@@ -93,7 +99,7 @@ end
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
     if not G.STATE_COMPLETE then
-        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante
+        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante.." | Round "..G.GAME.round
         DiscordIPC.activity.state = "In Shop"
         DiscordIPC.send_activity()
     end

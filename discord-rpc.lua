@@ -28,6 +28,7 @@ DiscordIPC = {
     id = "1244356034689237082",
     activity = {},
     is_windows = love.system.getOS() == "Windows",
+    connected = false,
     OPCODES = {
         HANDSHAKE = 0,
         FRAME = 1,
@@ -56,11 +57,7 @@ function DiscordIPC.connect()
 
             if file then
                 print("Distro :: Connected to Discord IPC (pipe "..i..")")
-
                 DiscordIPC.socket = file
-                local result, _ = DiscordIPC.send_handshake()
-
-                return result == DiscordIPC.OPCODES.FRAME
             end
         end
     else
@@ -104,11 +101,15 @@ function DiscordIPC.connect()
 
                 print("Distro :: Connected to Discord IPC (pipe "..i..")")
                 DiscordIPC.socket = socket
-                local result, _ = DiscordIPC.send_handshake()
-
-                return result == DiscordIPC.OPCODES.FRAME
             end
         end
+    end
+
+    if DiscordIPC.socket then
+        DiscordIPC.connected = true
+        local result, _ = DiscordIPC.send_handshake()
+
+        return result == DiscordIPC.OPCODES.FRAME
     end
 end
 

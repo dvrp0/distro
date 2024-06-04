@@ -1,6 +1,5 @@
 local ffi = require("ffi")
 
-Distro = {}
 Distro.decks = {
     "b_red",
     "b_blue",
