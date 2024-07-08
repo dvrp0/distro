@@ -28,6 +28,7 @@ Distro.stakes = {
     "stake_orange",
     "stake_gold"
 }
+Distro.lang = assert(loadstring(love.filesystem.read("localization/en-us.lua")))()
 
 -- https://gist.github.com/jrus/3197011
 function Distro.get_uuid()
@@ -133,4 +134,42 @@ function Distro.unpack(data)
     return
         Distro.le_bytes_to_int(Distro.string_to_le_bytes(data:sub(1, 4))),
         Distro.le_bytes_to_int(Distro.string_to_le_bytes(data:sub(5, 8)))
+end
+
+function Distro.get_back_name()
+    local key = G.GAME.selected_back.effect.center.key
+    local name = G.GAME.selected_back.name
+    local is_vanilla = get_index(Distro.decks, key)
+
+    if Distro.lang and Distro.lang.descriptions.Back[key] then
+        name = Distro.lang.descriptions.Back[key]
+    elseif G.P_CENTERS[key] and G.P_CENTERS[key].loc_txt then -- Modded decks
+        name = G.P_CENTERS[key].loc_txt.name
+    end
+
+    if not is_vanilla then
+        key = "b_unknown"
+        name = name.." (Modded)"
+    end
+
+    return key, name
+end
+
+function Distro.get_stake_name()
+    local key = G.P_CENTER_POOLS.Stake[G.GAME.stake].key
+    local name = G.P_CENTER_POOLS.Stake[G.GAME.stake].name:gsub("Chip", "Stake")
+    local is_vanilla = Distro.stakes[G.GAME.stake]
+
+    if Distro.lang and Distro.lang.descriptions.Back[key] then
+        name = Distro.lang.descriptions.Back[key]
+    elseif G.P_STAKES[key] and G.P_STAKES[key].loc_txt then -- Modded stakes
+        name = G.P_STAKES[key].loc_txt.description.name
+    end
+
+    if not is_vanilla then
+        key = "stake_unknown"
+        name = name.." (Modded)"
+    end
+
+    return key, name
 end

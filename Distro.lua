@@ -52,10 +52,8 @@ local start_run_ref = Game.start_run
 function Game:start_run(args)
     start_run_ref(self, args)
 
-    local back_key = G.GAME.selected_back.effect.center.key
-    local is_back_vanilla = get_index(Distro.decks, back_key)
-    local stake_name = G.P_CENTER_POOLS.Stake[G.GAME.stake].name:gsub("Chip", "Stake")
-    local is_stake_vanilla = Distro.stakes[G.GAME.stake]
+    local back_key, back_name = Distro.get_back_name()
+    local stake_key, stake_name = Distro.get_stake_name()
 
     DiscordIPC.activity = {
         details = "Ante "..G.GAME.round_resets.ante,
@@ -64,10 +62,10 @@ function Game:start_run(args)
             start = os.time() * 1000
         },
         assets = {
-            large_image = is_back_vanilla and back_key or "b_unknown",
-            large_text = G.GAME.selected_back.name..(is_back_vanilla and "" or " (Modded)"),
-            small_image = Distro.stakes[G.GAME.stake] or "stake_unknown",
-            small_text = stake_name..(is_stake_vanilla and "" or " (Modded)")
+            large_image = back_key,
+            large_text = back_name,
+            small_image = stake_key,
+            small_text = stake_name
         }
     }
 

@@ -162,6 +162,7 @@ function DiscordIPC.close()
     end
 
     DiscordIPC.socket = nil
+    DiscordIPC.connected = false
     print("Distro :: Disconnected from Discord IPC")
 end
 
