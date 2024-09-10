@@ -142,7 +142,7 @@ function Distro.get_back_name()
     local is_vanilla = get_index(Distro.decks, key)
 
     if Distro.lang and Distro.lang.descriptions.Back[key] then
-        name = Distro.lang.descriptions.Back[key]
+        name = Distro.lang.descriptions.Back[key].name
     elseif G.P_CENTERS[key] and G.P_CENTERS[key].loc_txt then -- Modded decks
         name = G.P_CENTERS[key].loc_txt.name
     end
@@ -160,10 +160,10 @@ function Distro.get_stake_name()
     local name = G.P_CENTER_POOLS.Stake[G.GAME.stake].name:gsub("Chip", "Stake")
     local is_vanilla = Distro.stakes[G.GAME.stake]
 
-    if Distro.lang and Distro.lang.descriptions.Back[key] then
-        name = Distro.lang.descriptions.Back[key]
+    if Distro.lang and Distro.lang.descriptions.Stake[key] then
+        name = Distro.lang.descriptions.Stake[key].name
     elseif G.P_STAKES[key] and G.P_STAKES[key].loc_txt then -- Modded stakes
-        name = G.P_STAKES[key].loc_txt.description.name
+        name = G.P_STAKES[key].loc_txt.name
     end
 
     if not is_vanilla then
