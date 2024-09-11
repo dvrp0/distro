@@ -209,7 +209,7 @@ end
 function Distro.get_blind_name()
     local key = G.GAME.blind.config.blind.key
     local name = G.P_BLINDS[key].name
-    local is_vanilla = Distro.blinds[key]
+    local is_vanilla = get_index(Distro.blinds, key)
 
     if Distro.lang and Distro.lang.descriptions.Blind[key] then
         name = Distro.lang.descriptions.Blind[key].name
