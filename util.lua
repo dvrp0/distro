@@ -28,6 +28,38 @@ Distro.stakes = {
     "stake_orange",
     "stake_gold"
 }
+Distro.blinds = {
+    "bl_small",
+    "bl_big",
+    "bl_ox",
+    "bl_hook",
+    "bl_mouth",
+    "bl_fish",
+    "bl_club",
+    "bl_manacle",
+    "bl_tooth",
+    "bl_wall",
+    "bl_house",
+    "bl_mark",
+    "bl_final_bell",
+    "bl_wheel",
+    "bl_arm",
+    "bl_psychic",
+    "bl_goad",
+    "bl_water",
+    "bl_eye",
+    "bl_plant",
+    "bl_needle",
+    "bl_head",
+    "bl_final_leaf",
+    "bl_final_vessel",
+    "bl_window",
+    "bl_serpent",
+    "bl_pillar",
+    "bl_flint",
+    "bl_final_acorn",
+    "bl_final_heart"
+}
 Distro.lang = assert(loadstring(love.filesystem.read("localization/en-us.lua")))()
 
 -- https://gist.github.com/jrus/3197011
@@ -172,4 +204,22 @@ function Distro.get_stake_name()
     end
 
     return key, name
+end
+
+function Distro.get_blind_name()
+    local key = G.GAME.blind.config.blind.key
+    local name = G.P_BLINDS[key].name
+    local is_vanilla = Distro.blinds[key]
+
+    if Distro.lang and Distro.lang.descriptions.Blind[key] then
+        name = Distro.lang.descriptions.Blind[key].name
+    elseif G.P_BLINDS[key] and G.P_BLINDS[key].loc_txt then -- Modded blinds
+        name = G.P_BLINDS[key].loc_txt.name
+    end
+
+    if not is_vanilla then
+        name = name.." (Modded)"
+    end
+
+    return name
 end

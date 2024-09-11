@@ -95,7 +95,7 @@ end
 local update_selecting_hand_ref = Game.update_selecting_hand
 function Game:update_selecting_hand(dt)
     if not G.STATE_COMPLETE then
-        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante.." | "..G.GAME.blind.name
+        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante.." | "..Distro.get_blind_name()
         DiscordIPC.activity.state = G.GAME.current_round.hands_left.." Hands, "..G.GAME.current_round.discards_left.." Discards left"
         DiscordIPC.send_activity()
     end
