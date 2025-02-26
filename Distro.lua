@@ -70,13 +70,7 @@ function Game:start_run(args)
     }
 
     if G.GAME.challenge then
-        for _, v in ipairs(G.CHALLENGES) do
-            if v.id == G.GAME.challenge then
-                DiscordIPC.activity.assets.small_text = "Challenge ("..v.name..")"
-
-                break
-            end
-        end
+        DiscordIPC.activity.assets.small_text = "Challenge ("..localize(G.GAME.challenge, "challenge_names")..(SMODS.Challenges[G.GAME.challenge].mod and ") (Modded)" or ")")
     end
 
     DiscordIPC.send_activity()
