@@ -111,7 +111,6 @@ end
 
 local quit_ref = G.FUNCS.quit
 function G.FUNCS.quit(e)
-    DiscordIPC.clear_activity()
     DiscordIPC.close()
     if quit_ref then
         quit_ref(e)
