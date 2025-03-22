@@ -37,7 +37,7 @@ function Game:main_menu(change_context)
     end
 
     DiscordIPC.activity = {
-        details = "Idling",
+        details = "Main Menu",
         timestamps = {
             start = os.time() * 1000
         },
@@ -54,6 +54,7 @@ function Game:start_run(args)
 
     local back_key, back_name = Distro.get_back_name()
     local stake_key, stake_name = Distro.get_stake_name()
+ 
 
     DiscordIPC.activity = {
         details = "Ante "..G.GAME.round_resets.ante,
@@ -70,13 +71,7 @@ function Game:start_run(args)
     }
 
     if G.GAME.challenge then
-        for _, v in ipairs(G.CHALLENGES) do
-            if v.id == G.GAME.challenge then
-                DiscordIPC.activity.assets.small_text = "Challenge ("..v.name..")"
-
-                break
-            end
-        end
+        DiscordIPC.activity.assets.small_text = "Challenge ("..localize(G.GAME.challenge, "challenge_names")..(SMODS.Challenges[G.GAME.challenge].mod and ") (Modded)" or ")")
     end
 
     DiscordIPC.send_activity()
@@ -117,5 +112,7 @@ end
 local quit_ref = G.FUNCS.quit
 function G.FUNCS.quit(e)
     DiscordIPC.close()
-    quit_ref(e)
+    if quit_ref then
+        quit_ref(e)
+    end
 end
