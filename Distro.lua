@@ -85,6 +85,7 @@ end
 local update_blind_select_ref = Game.update_blind_select
 function Game:update_blind_select(dt)
     if not G.STATE_COMPLETE then
+        DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante
         DiscordIPC.activity.state = "Selecting Blind"
         DiscordIPC.send_activity()
     end
@@ -114,8 +115,19 @@ function Game:update_shop(dt)
     update_shop_ref(self, dt)
 end
 
+local update_ref = Game.update
+function Game:update(dt)
+    update_ref(self, dt)
+
+    if DiscordIPC then
+        DiscordIPC.tick()
+    end
+end
+
 local quit_ref = G.FUNCS.quit
 function G.FUNCS.quit(e)
-    DiscordIPC.close()
+    if DiscordIPC then
+        DiscordIPC.close()
+    end
     quit_ref(e)
 end
