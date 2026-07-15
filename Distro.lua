@@ -1,9 +1,9 @@
 --- STEAMODDED HEADER
 --- MOD_NAME: Distro
 --- MOD_ID: Distro
---- MOD_AUTHOR: [DVRP]
---- MOD_DESCRIPTION: Adds Discord Rich Presence support
---- VERSION: 1.0.0
+--- MOD_AUTHOR: [DVRP] [l0rush1]
+--- MOD_DESCRIPTION: Adds Discord Rich Presence support to linux
+--- VERSION: 1.0.1
 
 ----------------------------------------------
 ------------MOD CODE -------------------------
@@ -17,6 +17,15 @@ if SMODS.Atlas then
         px = 34,
         py = 34
     })
+end
+
+function Distro.push_activity()
+    if not DiscordIPC then
+        return
+    end
+
+    DiscordIPC.last_activity_payload = nil
+    DiscordIPC.send_activity()
 end
 
 local main_menu_ref = Game.main_menu
@@ -39,13 +48,13 @@ function Game:main_menu(change_context)
     DiscordIPC.activity = {
         details = "Idling",
         timestamps = {
-            start = os.time() * 1000
+            start = os.time()
         },
         assets = {
             large_image = "default"
         }
     }
-    DiscordIPC.send_activity()
+    Distro.push_activity()
 end
 
 local start_run_ref = Game.start_run
@@ -59,7 +68,7 @@ function Game:start_run(args)
         details = "Ante "..G.GAME.round_resets.ante,
         state = "Selecting Blind",
         timestamps = {
-            start = os.time() * 1000
+            start = os.time()
         },
         assets = {
             large_image = back_key,
@@ -79,7 +88,7 @@ function Game:start_run(args)
         end
     end
 
-    DiscordIPC.send_activity()
+    Distro.push_activity()
 end
 
 local update_blind_select_ref = Game.update_blind_select
@@ -87,7 +96,7 @@ function Game:update_blind_select(dt)
     if not G.STATE_COMPLETE then
         DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante
         DiscordIPC.activity.state = "Selecting Blind"
-        DiscordIPC.send_activity()
+        Distro.push_activity()
     end
 
     update_blind_select_ref(self, dt)
@@ -98,7 +107,7 @@ function Game:update_selecting_hand(dt)
     if not G.STATE_COMPLETE then
         DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante.." | "..Distro.get_blind_name()
         DiscordIPC.activity.state = G.GAME.current_round.hands_left.." Hands, "..G.GAME.current_round.discards_left.." Discards left"
-        DiscordIPC.send_activity()
+        Distro.push_activity()
     end
 
     update_selecting_hand_ref(self, dt)
@@ -109,7 +118,7 @@ function Game:update_shop(dt)
     if not G.STATE_COMPLETE then
         DiscordIPC.activity.details = "Ante "..G.GAME.round_resets.ante.." | Round "..G.GAME.round
         DiscordIPC.activity.state = "In Shop"
-        DiscordIPC.send_activity()
+        Distro.push_activity()
     end
 
     update_shop_ref(self, dt)

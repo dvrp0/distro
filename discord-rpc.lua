@@ -79,6 +79,7 @@ DiscordIPC = {
     is_wine = detect_wine(),
     connected = false,
     unix_mode = false,
+    bridge_mode = false,
     socket = nil,
     last_activity_payload = nil,
     retry_at = 0,
@@ -320,12 +321,122 @@ function DiscordIPC.clear_socket_state()
     DiscordIPC.socket = nil
     DiscordIPC.connected = false
     DiscordIPC.unix_mode = false
+    DiscordIPC.bridge_mode = false
+end
+
+function DiscordIPC.bridge_dir()
+    local temp = os.getenv("TEMP") or os.getenv("TMP") or "C:/users/steamuser/AppData/Local/Temp"
+    temp = temp:gsub("\\", "/")
+    if temp:sub(-1) == "/" then
+        temp = temp:sub(1, -2)
+    end
+    return temp.."/distro-ipc"
+end
+
+function DiscordIPC.bridge_ready()
+    local dir = DiscordIPC.bridge_dir()
+    local handle = io.open(dir.."/bridge.ready", "r")
+    if not handle then
+        return false
+    end
+    handle:close()
+    return true
+end
+
+function DiscordIPC.json_escape(value)
+    return tostring(value)
+        :gsub("\\", "\\\\")
+        :gsub("\"", "\\\"")
+        :gsub("\r", "\\r")
+        :gsub("\n", "\\n")
+end
+
+function DiscordIPC.bridge_request(opcode, data, wait_reply)
+    if not DiscordIPC.bridge_ready() then
+        return false, nil, nil
+    end
+
+    local dir = DiscordIPC.bridge_dir()
+    local id = tostring(os.time()).."_"..tostring(math.random(1000, 9999))
+    local req_path = dir.."/req-"..id..".json"
+    local rep_path = dir.."/rep-"..id..".json"
+    local data_path = dir.."/rep-"..id..".data"
+    local wait = wait_reply and "true" or "false"
+    local body = "{\"id\":\""..id.."\",\"op\":"..tostring(opcode)..",\"wait\":"..wait..",\"data\":\""..DiscordIPC.json_escape(data).."\"}"
+    local tmp_path = req_path..".tmp"
+    local handle = io.open(tmp_path, "w")
+    if not handle then
+        return false, nil, nil
+    end
+    handle:write(body)
+    handle:flush()
+    handle:close()
+    os.rename(tmp_path, req_path)
+
+    local deadline = os.clock() + 2.0
+    while os.clock() < deadline do
+        local reply = io.open(rep_path, "r")
+        if reply then
+            local content = reply:read("*a")
+            reply:close()
+            pcall(os.remove, rep_path)
+
+            local ok = content:find("\"ok\":true", 1, true) ~= nil
+            local op = tonumber(content:match("\"op\":(%d+)"))
+            local payload = nil
+            local data_file = io.open(data_path, "r")
+            if data_file then
+                payload = data_file:read("*a")
+                data_file:close()
+                pcall(os.remove, data_path)
+            end
+
+            if ok then
+                return true, op, payload
+            end
+
+            return false, nil, nil
+        end
+    end
+
+    pcall(os.remove, req_path)
+    pcall(os.remove, rep_path)
+    pcall(os.remove, data_path)
+    return false, nil, nil
+end
+
+function DiscordIPC.connect_bridge()
+    if not DiscordIPC.is_wine then
+        return false
+    end
+
+    if not DiscordIPC.bridge_ready() then
+        print("Distro :: Proton bridge not running")
+        print("Distro :: Balatro → Properties → Launch Options:")
+        print("Distro :: WINEDLLOVERRIDES=\"version=n,b\" \"/home/lorushi/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro/Mods/Distro/distro/distro-proton-launch.sh\" %command%")
+        return false
+    end
+
+    DiscordIPC.socket = "bridge"
+    DiscordIPC.bridge_mode = true
+    DiscordIPC.unix_mode = false
+    DiscordIPC.connected = true
+
+    local opcode = select(1, DiscordIPC.send_handshake())
+    if opcode == DiscordIPC.OPCODES.FRAME then
+        print("Distro :: Connected to Discord IPC (proton bridge)")
+        return true
+    end
+
+    DiscordIPC.handle_disconnect()
+    return false
 end
 
 function DiscordIPC.handle_disconnect(allow_immediate_retry)
     local sock = DiscordIPC.socket
     local unix_mode = DiscordIPC.unix_mode
-    local win_pipe = DiscordIPC.is_windows and not unix_mode and sock
+    local bridge_mode = DiscordIPC.bridge_mode
+    local win_pipe = DiscordIPC.is_windows and not unix_mode and not bridge_mode and sock
 
     DiscordIPC.clear_socket_state()
 
@@ -333,7 +444,7 @@ function DiscordIPC.handle_disconnect(allow_immediate_retry)
         DiscordIPC.retry_at = 0
     end
 
-    if not sock then
+    if not sock or bridge_mode or sock == "bridge" then
         return
     end
 
@@ -498,6 +609,12 @@ function DiscordIPC.connect()
         if DiscordIPC.socket then
             DiscordIPC.handle_disconnect()
         end
+
+        local bridge_ok, bridge_connected = pcall(DiscordIPC.connect_bridge)
+
+        if bridge_ok and bridge_connected then
+            return true
+        end
     end
 
     DiscordIPC.clear_socket_state()
@@ -548,6 +665,10 @@ end
 
 function DiscordIPC.write(message)
     if not DiscordIPC.socket then
+        return false
+    end
+
+    if DiscordIPC.bridge_mode then
         return false
     end
 
@@ -612,6 +733,16 @@ function DiscordIPC.close()
         return
     end
 
+    if DiscordIPC.bridge_mode then
+        pcall(function()
+            DiscordIPC.bridge_request(DiscordIPC.OPCODES.CLOSE, "{}", false)
+        end)
+        DiscordIPC.clear_socket_state()
+        DiscordIPC.last_activity_payload = nil
+        print("Distro :: Disconnected from Discord IPC")
+        return
+    end
+
     local sock = DiscordIPC.socket
     local unix_mode = DiscordIPC.unix_mode
     local win_pipe = DiscordIPC.is_windows and not unix_mode
@@ -636,6 +767,21 @@ function DiscordIPC.close()
 end
 
 function DiscordIPC.send(data, opcode)
+    if DiscordIPC.bridge_mode then
+        local wait = opcode == DiscordIPC.OPCODES.HANDSHAKE
+        local ok, op, payload = DiscordIPC.bridge_request(opcode, data, wait)
+        if wait then
+            DiscordIPC._bridge_last_op = op
+            DiscordIPC._bridge_last_data = payload
+        end
+        if not ok then
+            print("Distro :: Failed to write to Discord IPC")
+            DiscordIPC.handle_disconnect(true)
+            return false
+        end
+        return true
+    end
+
     return DiscordIPC.write(Distro.pack(opcode, #data)..data)
 end
 
@@ -689,6 +835,15 @@ end
 
 function DiscordIPC.receive()
     local opcode, length, data = nil, nil, nil
+
+    if DiscordIPC.bridge_mode then
+        opcode = DiscordIPC._bridge_last_op
+        data = DiscordIPC._bridge_last_data
+        DiscordIPC._bridge_last_op = nil
+        DiscordIPC._bridge_last_data = nil
+        print("Distro :: Received "..tostring(opcode).." - "..tostring(data))
+        return opcode, data
+    end
 
     if DiscordIPC.is_windows and not DiscordIPC.unix_mode then
         opcode, length = Distro.unpack(DiscordIPC.read(8))
